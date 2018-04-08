@@ -4,11 +4,10 @@ import (
 	"log"
 	"time"
 	"fmt"
-
+	"encoding/json"
 	"github.com/ecc1/gpio"
 )
 
-//working version of uart receiver at 25 baud
 //var thechar  uint16 = 0
 
 func main() {
@@ -25,10 +24,16 @@ func main() {
 		log.Fatal(errsig)
 	}
 	var thechar  uint16 = 0
+	var micro    int64 = 0
 	charcount := 0
 	thestring := ""
-//	log.Printf("starting outside loop")
+	now := time.Now()
+    secs := now.Unix()
+    date := now.Format(time.RFC3339)
+    //fmt.Println(date)
+OUTER:
 	for {
+//	    log.Printf("starting outside loop")
 		thestring = ""
 		charcount = 0
 //		errrts = grts.Wait(60 * time.Second)
@@ -57,9 +62,8 @@ func main() {
 		j := 0
 		bitcount := 0
 		bsig := true
-//		log.Printf("starting inside loop")
-//		for i := 0; i < 4096; i++{
         for {
+//		    log.Printf("starting inside loop")
 			if startbit == 0 {
 				errsigi := gsigi.Wait(10000 * time.Microsecond)
 //                errsigi := gsigi.Wait(420 * time.Second)
@@ -103,8 +107,15 @@ func main() {
 				thestring = fmt.Sprintf("%s%c", thestring, foo)
 				//thestring = thestring + string(thechar)
 				if foo == 10 {
-					log.Printf("%s", thestring)
+//					log.Printf("%s", thestring)
+					now = time.Now()
+					secs = now.Unix()
+					micro = secs * 1000
+					date = now.Format(time.RFC3339)
+					fmt.Println(thestring[len(thestring)-32:len(thestring)-2], micro, date)
 					thestring = ""
+					time.Sleep(200 * time.Second)
+					continue OUTER
 					break
 				}
 //				log.Printf("%s", thestring) //test
@@ -146,5 +157,16 @@ func main() {
         //time.Sleep(1000000 * time.Microsecond)
 //        log.Printf("charcount = %d", charcount)
         charcount = 0
+	}
+	log.Printf("wait outer loop")
+}
+
+func print(r string) {
+	b, err := json.MarshalIndent(r, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		fmt.Printf("%+v\n", r)
+	} else {
+		fmt.Println(string(b))
 	}
 }
